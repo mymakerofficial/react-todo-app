@@ -9,18 +9,7 @@ import {TooltipProvider} from "@/components/ui/tooltip.tsx";
 import {Toaster} from "@/components/ui/sonner.tsx";
 import {HasId, useListState} from "@/lib/use-list.ts";
 import {JSX} from "react";
-
-function groupBy<T, K extends string | number | symbol>(list: Array<T>, keySelector: (item: T) => K): Record<K, Array<T>> {
-  const record = {} as Record<K, Array<T>>
-  list.forEach((item) => {
-    const key = keySelector(item)
-    if (!record[key]) {
-      record[key] = [] as Array<T>
-    }
-    record[key].push(item)
-  })
-  return record
-}
+import {groupBy} from "@/lib/group-by.ts";
 
 function getRelativeIndex<T extends HasId>(array: Array<T>, itemId: T['id'], offset: number): number {
   const index = array.findIndex((item) => item.id === itemId)
