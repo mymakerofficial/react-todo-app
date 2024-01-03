@@ -10,6 +10,7 @@ export interface ListState<T extends HasId> {
   removeMany: (ids: Array<T['id']>) => void
   clear: () => void
   update: (id: T['id'], changes: Partial<T>) => void
+  updateMany: (ids: Array<T['id']>, changes: Partial<T>) => void
   move: (id: T['id'], index: number) => void
   moveRelative: (id: T['id'], offset: number) => void
 }
@@ -36,6 +37,18 @@ export function useListState<T extends HasId>(initial: Array<T> = []): ListState
   function update(id: T['id'], changes: Partial<T>) {
     setList(list.map((item) => {
       if (item.id === id) {
+        return {
+          ...item,
+          ...changes,
+        }
+      }
+      return item
+    }))
+  }
+
+  function updateMany(ids: Array<T['id']>, changes: Partial<T>) {
+    setList(list.map((item) => {
+      if (ids.includes(item.id)) {
         return {
           ...item,
           ...changes,
@@ -77,6 +90,7 @@ export function useListState<T extends HasId>(initial: Array<T> = []): ListState
     removeMany,
     clear,
     update,
+    updateMany,
     move,
     moveRelative,
   }

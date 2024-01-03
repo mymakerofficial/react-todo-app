@@ -4,8 +4,10 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {Form, FormControl, FormField, FormItem, FormMessage} from "@/components/ui/form.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {Button} from "@/components/ui/button.tsx";
-import {Plus, Trash2} from "lucide-react";
-import {Menu} from "@/components/menu.tsx";
+import {Check, CheckCircle, Plus, Trash2} from "lucide-react";
+import {Menu, MenuItems} from "@/components/menu.tsx";
+import {ListState} from "@/lib/use-list.ts";
+import {TodoItem} from "@/lib/item.ts";
 
 const formSchema = z.object({
   label: z.string({
@@ -15,7 +17,13 @@ const formSchema = z.object({
     .max(100, "Label must be at most 100 characters long")
 })
 
-export function InputForm({onAddItem, onDeleteAll}: {onAddItem: (label: string) => void, onDeleteAll: () => void}) {
+interface HeaderControlsProps {
+  onAddItem: (partialItem: Partial<TodoItem>) => void
+  onDeleteAll: ListState<TodoItem>['clear']
+  onCompleteAll: () => void
+}
+
+export function HeaderControls({onAddItem, onDeleteAll, onCompleteAll}: HeaderControlsProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -24,13 +32,22 @@ export function InputForm({onAddItem, onDeleteAll}: {onAddItem: (label: string) 
   })
 
   function onSubmit(data: z.infer<typeof formSchema>) {
-    onAddItem(data.label)
+    onAddItem({ label: data.label })
     form.reset()
   }
 
   function handleDeleteAll() {
     onDeleteAll()
   }
+
+  function handleCompleteAll() {
+    onCompleteAll()
+  }
+
+  const menuItems: MenuItems = [[
+    { label: 'Delete all tasks',  icon: Trash2,  onClick: handleDeleteAll,  className: 'text-red-500'},
+    { label: 'Mark all completed',  icon: CheckCircle, onClick: handleCompleteAll},
+  ]]
 
   return (
     <Form {...form}>
@@ -44,9 +61,7 @@ export function InputForm({onAddItem, onDeleteAll}: {onAddItem: (label: string) 
           </FormItem>
         )} />
         <Button variant='ghost' size='icon' type='submit'><Plus className='size-[1.2rem]' /></Button>
-        <Menu itemGroups={[[
-          { label: 'Delete All',  icon: Trash2,  onClick: handleDeleteAll,  className: 'text-red-500'}
-        ]]} />
+        <Menu items={menuItems} />
       </form>
     </Form>
   )

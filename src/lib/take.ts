@@ -1,3 +1,5 @@
+import {HasId} from "@/lib/use-list.ts";
+
 export function takeIf<T>(condition: boolean, value: T): T | undefined {
   return condition ? value : undefined;
 }
@@ -16,4 +18,12 @@ export function forEachAs<T, G>(list: Array<T>, map: (item: T) => G): Array<G> {
 
 export function isNotLast(index: number, list: Array<any>): boolean {
   return index < list.length - 1 && list.length > 1;
+}
+
+export function idsOf<T extends HasId>(list: Array<T>): Array<T['id']> {
+  return list.map((it) => it.id);
+}
+
+export function withIdsOf<T extends HasId>(list: Array<T>) {
+  return idsOf(list);
 }

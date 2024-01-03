@@ -37,7 +37,7 @@ export function ItemList({label, items, onUpdateItem, onMoveItem, onMoveItemRela
                   <Trash2 className='size-[1.2rem]' />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Remove all items in '{label}'</TooltipContent>
+              <TooltipContent>Remove all tasks in '{label}'</TooltipContent>
             </Tooltip>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import {newTodoItem, TodoItem} from "@/lib/item.ts";
-import {InputForm} from "@/components/input-form.tsx";
+import {HeaderControls} from "@/components/header-controls.tsx";
 import {ThemeProvider} from "@/components/theme-provider.tsx";
 import {ItemList} from "@/components/item-list.tsx";
 import {ModeToggle} from "@/components/mode-toggle.tsx";
@@ -8,7 +8,7 @@ import {TooltipProvider} from "@/components/ui/tooltip.tsx";
 import {Toaster} from "@/components/ui/sonner.tsx";
 import {HasId, useListState} from "@/lib/use-list.ts";
 import {groupBy} from "@/lib/group-by.ts";
-import {takeIf} from "@/lib/take.ts";
+import {idsOf, takeIf, withIdsOf} from "@/lib/take.ts";
 
 function getRelativeIndex<T extends HasId>(array: Array<T>, itemId: T['id'], offset: number): number {
   const index = array.findIndex((item) => item.id === itemId)
@@ -40,8 +40,8 @@ export default function App() {
     (item) => item.completed ? 'completed' : 'active'
   )
 
-  function handleAddItem(label: string) {
-    return list.add(newTodoItem({label}));
+  function handleAddItem(partialItem: Partial<TodoItem>) {
+    return list.add(newTodoItem(partialItem));
   }
 
   function handleUpdateItem(itemId: TodoItem['id'], changes: Partial<TodoItem>) {
@@ -80,6 +80,10 @@ export default function App() {
     list.clear()
   }
 
+  function handleCompleteAll() {
+    list.updateMany(withIdsOf(list.value), {completed: true})
+  }
+
   const isEmpty = list.value.length === 0
   const hasCompletedAll = active.length === 0 && completed.length > 0
 
@@ -89,7 +93,11 @@ export default function App() {
         <TooltipProvider>
           <main className='max-w-2xl mx-auto my-16 flex flex-col gap-8'>
             <Header />
-            <InputForm onAddItem={handleAddItem} onDeleteAll={handleRemoveAll}/>
+            <HeaderControls
+              onAddItem={handleAddItem}
+              onDeleteAll={handleRemoveAll}
+              onCompleteAll={handleCompleteAll}
+            />
             {takeIf(isEmpty,
               <EmptyState label='Nothing to do!' text='Type something in the textfield above' icon='🔎'/>
             )}

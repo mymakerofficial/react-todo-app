@@ -177,7 +177,7 @@ export function Item({item, onUpdateItem, onMoveItem, onMoveItemRelative, onRemo
           onUpdateItem={handleUpdate}
           onRemoveItem={handleRemove}
         />
-        <Menu itemGroups={menuItems} />
+        <Menu items={menuItems} />
       </div>
     </article>
   )

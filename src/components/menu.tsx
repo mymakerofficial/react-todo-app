@@ -29,7 +29,7 @@ function menuItem(menuItem: MenuItem) {
   )
 }
 
-export function Menu({icon, itemGroups}: {icon?: LucideIcon, itemGroups: MenuItems}) {
+export function Menu({icon, items: itemGroups}: {icon?: LucideIcon, items: MenuItems}) {
   const Icon = icon ?? MoreHorizontal
 
   const menuElements = itemGroups.flatMap((items, index) => [
