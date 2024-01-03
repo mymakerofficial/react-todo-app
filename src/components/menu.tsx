@@ -6,7 +6,8 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu.tsx";
 import {Button} from "@/components/ui/button.tsx";
-import {twMerge} from "tailwind-merge";
+import {forEachAs, isNotLast, takeIf} from "@/lib/take.ts";
+import {cn} from "@/lib/utils.ts";
 
 export interface MenuItem {
   label: string
@@ -20,10 +21,8 @@ export type MenuItems = Array<Array<MenuItem>>
 function menuItem(menuItem: MenuItem) {
   const {label, icon: Icon, onClick, className} = menuItem
 
-  const combinedClassName = twMerge('space-x-2', className)
-
   return (
-    <DropdownMenuItem onClick={onClick} className={combinedClassName} key={label} >
+    <DropdownMenuItem onClick={onClick} className={cn('space-x-2', className)} key={label} >
       <Icon className='size-[1rem]'/>
       <span>{label}</span>
     </DropdownMenuItem>
@@ -34,8 +33,10 @@ export function Menu({icon, itemGroups}: {icon?: LucideIcon, itemGroups: MenuIte
   const Icon = icon ?? MoreHorizontal
 
   const menuElements = itemGroups.flatMap((items, index) => [
-    ...items.map((item) => menuItem(item)),
-    index !== items.length && itemGroups.length > 1 ? <DropdownMenuSeparator key={index} /> : null,
+    ...forEachAs(items, menuItem),
+    takeIf(isNotLast(index, itemGroups),
+      <DropdownMenuSeparator key={index} />
+    ),
   ])
 
   return (
