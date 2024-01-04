@@ -1,10 +1,12 @@
 import {useState} from "react";
+import {StorageFacade} from "@/lib/use-storage.ts";
 
 export type HasId = {id: string}
 
 export interface ListState<T extends HasId> {
   value: Array<T>
   set: (value: Array<T>) => void
+  init: () => void
   add: (item: T) => void
   remove: (id: T['id']) => void
   removeMany: (ids: Array<T['id']>) => void
@@ -15,27 +17,45 @@ export interface ListState<T extends HasId> {
   moveRelative: (id: T['id'], offset: number) => void
 }
 
-export function useListState<T extends HasId>(initial: Array<T> = []): ListState<T> {
+export function useListState<T extends HasId>(initial: Array<T> = [], storage?: StorageFacade<Array<T>>): ListState<T> {
   const [list, setList] = useState<Array<T>>(initial)
 
+  function set(value: Array<T>) {
+    setList(value)
+    if (storage) {
+      storage.set(value)
+    }
+  }
+
+  function init() {
+    if (storage) {
+      const value = storage.get() || initial || []
+      if (value) {
+        set(value)
+      }
+    } else {
+      set(initial)
+    }
+  }
+
   function add(item: T) {
-    setList([...list, item])
+    set([...list, item])
   }
 
   function remove(id: T['id']) {
-    setList(list.filter((it) => it.id !== id))
+    set(list.filter((it) => it.id !== id))
   }
 
   function removeMany(ids: Array<T['id']>) {
-    setList(list.filter((it) => !ids.includes(it.id)))
+    set(list.filter((it) => !ids.includes(it.id)))
   }
 
   function clear() {
-    setList([])
+    set([])
   }
 
   function update(id: T['id'], changes: Partial<T>) {
-    setList(list.map((item) => {
+    set(list.map((item) => {
       if (item.id === id) {
         return {
           ...item,
@@ -47,7 +67,7 @@ export function useListState<T extends HasId>(initial: Array<T> = []): ListState
   }
 
   function updateMany(ids: Array<T['id']>, changes: Partial<T>) {
-    setList(list.map((item) => {
+    set(list.map((item) => {
       if (ids.includes(item.id)) {
         return {
           ...item,
@@ -66,7 +86,7 @@ export function useListState<T extends HasId>(initial: Array<T> = []): ListState
     }
     newList.splice(list.indexOf(item), 1)
     newList.splice(index, 0, item)
-    setList(newList)
+    set(newList)
   }
 
   function moveRelative(id: T['id'], offset: number) {
@@ -85,6 +105,7 @@ export function useListState<T extends HasId>(initial: Array<T> = []): ListState
   return {
     value: list,
     set: setList,
+    init,
     add,
     remove,
     removeMany,

@@ -9,6 +9,8 @@ import {Toaster} from "@/components/ui/sonner.tsx";
 import {HasId, useListState} from "@/lib/use-list.ts";
 import {groupBy} from "@/lib/group-by.ts";
 import {takeIf, withIdsOf} from "@/lib/take.ts";
+import {useStorage} from "@/lib/use-storage.ts";
+import {useMemo} from "react";
 
 function getRelativeIndex<T extends HasId>(array: Array<T>, itemId: T['id'], offset: number): number {
   const index = array.findIndex((item) => item.id === itemId)
@@ -30,7 +32,11 @@ function Header() {
 }
 
 export default function App() {
-  const list = useListState<TodoItem>()
+  const list = useListState<TodoItem>([], useStorage('todo-list'))
+
+  useMemo(() => {
+    list.init()
+  }, [])
 
   const {
     active = [],

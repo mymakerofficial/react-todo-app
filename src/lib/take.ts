@@ -45,3 +45,7 @@ export function idsOf<T extends HasId>(list: Array<T>): Array<T['id']> {
 export function withIdsOf<T extends HasId>(list: Array<T>) {
   return idsOf(list);
 }
+
+export function TODO(): never {
+  throw new Error('TODO');
+}
