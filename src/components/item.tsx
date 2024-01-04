@@ -90,7 +90,7 @@ function ItemDialog({ open, onOpenChange: setOpen, showTrigger, item, onUpdateIt
                   <FormControl>
                     <Input className='col-span-3' {...field} />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className='col-span-4 text-right' />
                 </FormItem>
               )} />
               <FormField control={form.control} name='description' render={({field}) => (
@@ -99,7 +99,7 @@ function ItemDialog({ open, onOpenChange: setOpen, showTrigger, item, onUpdateIt
                   <FormControl>
                     <Textarea className='col-span-3' {...field} />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className='col-span-4 text-right' />
                 </FormItem>
               )} />
             </div>
