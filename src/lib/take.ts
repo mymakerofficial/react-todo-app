@@ -1,22 +1,40 @@
 import {HasId} from "@/lib/use-list.ts";
 
-export function takeIf<T>(condition: boolean, value: T): T | undefined {
-  return condition ? value : undefined;
+type Condition = boolean | null | undefined | unknown | number | string | (() => boolean)
+
+export function isTruthy<T extends Condition>(condition: T): condition is Exclude<T, false | 0 | '' | null | undefined> {
+  if (typeof condition === 'function') {
+    return condition()
+  }
+
+  return !!condition;
 }
 
-export function takeIfElse<T, G>(condition: boolean, value: T, other: G): T | G {
-  return condition ? value : other;
+export function takeIfElse<T, G>(condition: Condition, value: T, other: G): T | G {
+  return isTruthy(condition) ? value : other;
 }
 
-export function takeWhen<T>(predicate: (value: T) => boolean, value: T): T | undefined {
-  return predicate(value) ? value : undefined;
+export function takeIf<T>(condition: Condition, value: T): T | undefined {
+  return takeIfElse(condition, value, undefined);
+}
+
+export function takeIfNot<T>(condition: Condition, value: T): T | undefined {
+  return takeIfElse(!condition, value, undefined);
+}
+
+export function ifNot(condition: Condition): boolean {
+  return !isTruthy(condition);
 }
 
 export function forEachAs<T, G>(list: Array<T>, map: (item: T) => G): Array<G> {
   return list.map(map);
 }
 
-export function isNotLast(index: number, list: Array<any>): boolean {
+export function isEmpty<T>(list: Array<T>): boolean {
+  return list.length === 0;
+}
+
+export function isNotLast<T>(index: number, list: Array<T>): boolean {
   return index < list.length - 1 && list.length > 1;
 }
 

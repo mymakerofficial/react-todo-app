@@ -8,7 +8,7 @@ import {TooltipProvider} from "@/components/ui/tooltip.tsx";
 import {Toaster} from "@/components/ui/sonner.tsx";
 import {HasId, useListState} from "@/lib/use-list.ts";
 import {groupBy} from "@/lib/group-by.ts";
-import {idsOf, takeIf, withIdsOf} from "@/lib/take.ts";
+import {takeIf, withIdsOf} from "@/lib/take.ts";
 
 function getRelativeIndex<T extends HasId>(array: Array<T>, itemId: T['id'], offset: number): number {
   const index = array.findIndex((item) => item.id === itemId)
@@ -118,6 +118,7 @@ export default function App() {
             />
             <ItemList
               label='Done'
+              collapsible
               items={completed}
               onUpdateItem={handleUpdateItem}
               onMoveItem={handleMoveItem}
