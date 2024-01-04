@@ -10,7 +10,7 @@ import {HasId, ListSnapshot, useLimitedListDecorator, useListHistoryDecorator, u
 import {groupBy} from "@/lib/group-by.ts";
 import {takeIf, truncate, withIdsOf} from "@/lib/take.ts";
 import {useStorage} from "@/lib/use-storage.ts";
-import {useMemo} from "react";
+import {useEffect, useMemo} from "react";
 import {toast} from "sonner";
 
 function getRelativeIndex<T extends HasId>(array: Array<T>, itemId: T['id'], offset: number): number {
@@ -33,6 +33,8 @@ function Header() {
 }
 
 export default function App() {
+  const listLimit = 100
+
   const list =
     useListHistoryDecorator(
       useLimitedListDecorator(
@@ -40,7 +42,7 @@ export default function App() {
           emptyTodoList(),
           useStorage('todo-list')
         ),
-        500
+        listLimit
       ),
       useStorage('todo-history')
     )
@@ -48,6 +50,14 @@ export default function App() {
   useMemo(() => {
     list.init()
   }, [])
+
+  useEffect(() => {
+    if (list.value.length >= listLimit) {
+      toast.warning('List limit reached! Removing oldest task.', {
+        description: `You can only have ${listLimit} tasks in your list at a time.`
+      })
+    }
+  }, [list.value]);
 
   const {
     active = [],
@@ -153,6 +163,7 @@ export default function App() {
               onDeleteAll={handleRemoveAll}
               onCompleteAll={handleCompleteAll}
             />
+            {list.value.length}
             {takeIf(isEmpty,
               <EmptyState label='Nothing to do!' text='Type something in the textfield above' icon='🔎'/>
             )}
