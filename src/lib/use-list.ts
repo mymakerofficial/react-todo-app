@@ -1,6 +1,7 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {StorageFacade} from "@/lib/use-storage.ts";
 import {v4 as uuid} from "uuid";
+import {groupBy} from "@/lib/group-by.ts";
 
 export type HasId = {id: string}
 
@@ -138,7 +139,11 @@ export function useListState<T extends HasId>(initial: Array<T> = [], storage?: 
   }
 }
 
-export function useLimitedListDecorator<T extends HasId>(wrappee: ListState<T>, limit: number): ListState<T> {
+export function useLimitedList<T extends HasId, S extends ListState<T>>(wrappee: S, limit: number): ListState<T> & S {
+  if (limit === Infinity) {
+    return wrappee
+  }
+
   function init() {
     wrappee.init()
     wrappee.set(wrappee.getRawValue().slice(0, limit))
@@ -190,8 +195,8 @@ export interface ListHistoryDecorator<T extends HasId> extends ListState<T> {
   canRedo: () => boolean
 }
 
-export function useListHistoryDecorator<T extends HasId>(wrappee: ListState<T>, storage?: StorageFacade<Array<ListSnapshot<T>>>): ListHistoryDecorator<T> {
-  const history = useLimitedListDecorator(useListState<ListSnapshot<T>>([], storage), 10)
+export function useListHistory<T extends HasId, S extends ListState<T>>(wrappee: S, storage?: StorageFacade<Array<ListSnapshot<T>>>, limit: number = Infinity): ListHistoryDecorator<T> & S {
+  const history = useLimitedList<ListSnapshot<T>, ListState<ListSnapshot<T>>>(useListState<ListSnapshot<T>>([], storage), limit)
   const [historyIndex, setHistoryIndex] = useState<number>(0)
 
   function setIndexToLast() {
@@ -272,5 +277,48 @@ export function useListHistoryDecorator<T extends HasId>(wrappee: ListState<T>, 
     getSnapshotById: history.getById,
     canUndo,
     canRedo,
+  }
+}
+
+export interface GroupedListDecorator<T extends HasId, K extends string | number | symbol> extends ListState<T> {
+  groups: Record<K, Array<T>>
+}
+
+export function useGroupedList<T extends HasId, K extends string | number | symbol, S extends ListState<T>>(wrappee: S, keySelector: (item: T) => K): GroupedListDecorator<T, K> & S {
+  const [groups, setGroups] = useState<Record<K, Array<T>>>({} as Record<K, Array<T>>)
+
+  useEffect(() => {
+    setGroups(groupBy(wrappee.getRawValue(), keySelector))
+  }, [wrappee.value]);
+
+  function getRelativeIndex(array: Array<T>, itemId: T['id'], offset: number): number {
+    const index = array.findIndex((item) => item.id === itemId)
+    return index + offset
+  }
+
+  function translateSubArrayIndexToFullArrayIndex(subArray: Array<T>, fullArray: Array<T>, subArrayIndex: number): number {
+    return fullArray.findIndex((item) => item.id === subArray[subArrayIndex]?.id)
+  }
+
+  function moveRelative(id: T['id'], offset: number) {
+    const item = wrappee.getRawValue().find((item) => item.id === id)
+    if (!item) {
+      return
+    }
+
+    const subArray = groups[keySelector(item)]
+    const newIndexInSubArray = getRelativeIndex(subArray, id, offset)
+    const newIndex = translateSubArrayIndexToFullArrayIndex(subArray, wrappee.getRawValue(), newIndexInSubArray)
+    if (newIndex === -1) {
+      return
+    }
+
+    wrappee.move(id, newIndex)
+  }
+
+  return {
+    ...wrappee,
+    groups,
+    moveRelative,
   }
 }

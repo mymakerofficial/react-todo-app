@@ -6,22 +6,18 @@ import {ModeToggle} from "@/components/mode-toggle.tsx";
 import {EmptyState} from "@/components/empty-state.tsx";
 import {TooltipProvider} from "@/components/ui/tooltip.tsx";
 import {Toaster} from "@/components/ui/sonner.tsx";
-import {HasId, ListSnapshot, useLimitedListDecorator, useListHistoryDecorator, useListState} from "@/lib/use-list.ts";
-import {groupBy} from "@/lib/group-by.ts";
+import {
+  GroupedListDecorator,
+  ListSnapshot, ListState,
+  useGroupedList,
+  useLimitedList,
+  useListHistory,
+  useListState
+} from "@/lib/use-list.ts";
 import {takeIf, truncate, withIdsOf} from "@/lib/take.ts";
 import {useStorage} from "@/lib/use-storage.ts";
 import {useEffect, useMemo} from "react";
 import {toast} from "sonner";
-
-function getRelativeIndex<T extends HasId>(array: Array<T>, itemId: T['id'], offset: number): number {
-  const index = array.findIndex((item) => item.id === itemId)
-  return index + offset
-
-}
-
-function translateSubArrayIndexToFullArrayIndex<T extends HasId>(subArray: Array<T>, fullArray: Array<T>, subArrayIndex: number): number {
-  return fullArray.findIndex((item) => item.id === subArray[subArrayIndex]?.id)
-}
 
 function Header() {
   return (
@@ -34,17 +30,26 @@ function Header() {
 
 export default function App() {
   const listLimit = 100
+  const historyLimit = 100
+
+  const groupSelector = (item: TodoItem) => item.completed ? 'completed' : 'active'
+
+  // TODO figure out a way to have all types implicit
 
   const list =
-    useListHistoryDecorator(
-      useLimitedListDecorator(
-        useListState(
-          emptyTodoList(),
-          useStorage('todo-list')
+    useListHistory<TodoItem, GroupedListDecorator<TodoItem, string>>(
+      useGroupedList<TodoItem, string, ListState<TodoItem>>(
+        useLimitedList<TodoItem, ListState<TodoItem>>(
+          useListState<TodoItem>(
+            emptyTodoList(),
+            useStorage('todo-list')
+          ),
+          listLimit
         ),
-        listLimit
+        groupSelector
       ),
-      useStorage('todo-history')
+      useStorage('todo-history'),
+      historyLimit
     )
 
   useMemo(() => {
@@ -62,10 +67,7 @@ export default function App() {
   const {
     active = [],
     completed= []
-  } = groupBy(
-    list.value,
-    (item) => item.completed ? 'completed' : 'active'
-  )
+  } = list.groups
 
   function toastSnapshot(snapshotId: ListSnapshot<TodoItem>['id']) {
     const snapshot = list.getSnapshotById(snapshotId)
@@ -99,19 +101,9 @@ export default function App() {
   }
 
   function handleMoveItemRelative(itemId: TodoItem['id'], offset: number) {
-    const item = list.value.find((item) => item.id === itemId)
-    if (!item) {
-      return
-    }
-
-    const subArray = item.completed ? completed : active
-    const newIndexInSubArray = getRelativeIndex(subArray, itemId, offset)
-    const newIndex = translateSubArrayIndexToFullArrayIndex(subArray, list.value, newIndexInSubArray)
-    if (newIndex === -1) {
-      return
-    }
-
-    handleMoveItem(itemId, newIndex)
+    const label = list.getById(itemId)?.label
+    list.moveRelative(itemId, offset);
+    toastSnapshot(list.createSnapshot(`Moved "${truncate(label)}" ${offset > 0 ? 'down' : 'up'}`))
   }
 
   function handleRemoveItem(itemId: TodoItem['id']) {
