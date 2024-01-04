@@ -30,7 +30,7 @@ function Header() {
 
 export default function App() {
   const listLimit = 100
-  const historyLimit = 100
+  const historyLimit = 10
 
   const groupSelector = (item: TodoItem) => item.completed ? 'completed' : 'active'
 
