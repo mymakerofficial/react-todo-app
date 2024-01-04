@@ -1,5 +1,6 @@
 import {useState} from "react";
 import {StorageFacade} from "@/lib/use-storage.ts";
+import {v4 as uuid} from "uuid";
 
 export type HasId = {id: string}
 
@@ -134,9 +135,10 @@ export function useListState<T extends HasId>(initial: Array<T> = [], storage?: 
 export interface ListSnapshot<T extends HasId> extends HasId {
   value: Array<T>
   message: string
+  createdAt: string
 }
 
-interface ListHistoryDecorator<T extends HasId> extends ListState<T> {
+export interface ListHistoryDecorator<T extends HasId> extends ListState<T> {
   history: ListState<ListSnapshot<T>>['value']
   historyIndex: number
   createSnapshot: (message: string) => ListSnapshot<T>['id']
@@ -177,9 +179,10 @@ export function useListHistoryDecorator<T extends HasId>(wrappee: ListState<T>, 
     history.removeMany(getIdsAfterIndex(historyIndex))
 
     const snapshot = {
-      id: new Date().toISOString(),
+      id: uuid(),
       value: wrappee.getRawValue(),
       message,
+      createdAt: new Date().toISOString(),
     }
 
     history.add(snapshot)

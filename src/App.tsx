@@ -135,9 +135,11 @@ export default function App() {
             <HeaderControls
               canUndo={list.canUndo()}
               canRedo={list.canRedo()}
+              history={list.history}
               onAddItem={handleAddItem}
               onUndo={handleUndo}
               onRedo={handleRedo}
+              onRestoreSnapshot={list.restoreSnapshot}
               onDeleteAll={handleRemoveAll}
               onCompleteAll={handleCompleteAll}
             />

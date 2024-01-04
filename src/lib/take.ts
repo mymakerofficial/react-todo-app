@@ -53,3 +53,7 @@ export function TODO(): never {
 export function truncate(text: string | undefined, length: number = 12): string {
   return (text || '').length > length ? `${text?.substring(0, length)}...` : (text || '');
 }
+
+export function toReversed<T>(list: Array<T>): Array<T> {
+  return [...list].reverse();
+}

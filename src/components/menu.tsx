@@ -1,31 +1,79 @@
 import {LucideIcon, MoreHorizontal} from "lucide-react";
 import {
   DropdownMenu,
-  DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator,
+  DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuPortal,
+  DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {forEachAs, isNotLast, takeIf} from "@/lib/take.ts";
 import {cn} from "@/lib/utils.ts";
+import {ReactNode} from "react";
 
 export interface MenuItem {
+  key?: string
   label: string
-  icon: LucideIcon
-  onClick: () => void
+  icon?: LucideIcon
+  onClick?: () => void
   className?: string
   disabled?: boolean
+  subMenu?: MenuItems
 }
 
 export type MenuItems = Array<Array<MenuItem>>
 
-function menuItem(menuItem: MenuItem) {
-  const {label, icon: Icon, onClick, className, disabled} = menuItem
+function getIcon(icon: LucideIcon | undefined): ReactNode {
+  if (!icon) {
+    return <></>
+  }
+
+  const Icon = icon
+
+  return <Icon className='size-[1rem]'/>
+}
+
+function menuContent(itemGroups: MenuItems) {
+  return itemGroups.flatMap((items, index) => (
+    <>
+      <DropdownMenuGroup>
+        {...forEachAs(items, menuItem)}
+      </DropdownMenuGroup>
+      {takeIf(isNotLast(index, itemGroups),
+        <DropdownMenuSeparator key={index} />
+      )}
+    </>
+  ))
+}
+
+function subMenu(menuItem: MenuItem) {
+  if (!menuItem.subMenu) {
+    return null
+  }
 
   return (
-    <DropdownMenuItem onClick={onClick} className={cn('space-x-2', className)} disabled={disabled} key={label} >
-      <Icon className='size-[1rem]'/>
-      <span>{label}</span>
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger className={cn('space-x-2', menuItem.className)} disabled={menuItem.disabled} key={menuItem.key || menuItem.label}>
+        { getIcon(menuItem.icon) }
+        <span>{ menuItem.label }</span>
+      </DropdownMenuSubTrigger>
+      <DropdownMenuPortal>
+        <DropdownMenuSubContent>
+          { menuContent(menuItem.subMenu) }
+        </DropdownMenuSubContent>
+      </DropdownMenuPortal>
+    </DropdownMenuSub>
+  )
+}
+
+function menuItem(menuItem: MenuItem) {
+  if (menuItem.subMenu) {
+    return subMenu(menuItem)
+  }
+
+  return (
+    <DropdownMenuItem onClick={menuItem.onClick} className={cn('space-x-2', menuItem.className)} disabled={menuItem.disabled} key={menuItem.key || menuItem.label} >
+      { getIcon(menuItem.icon) }
+      <span>{menuItem.label}</span>
     </DropdownMenuItem>
   )
 }
@@ -33,12 +81,7 @@ function menuItem(menuItem: MenuItem) {
 export function Menu({icon, items: itemGroups}: {icon?: LucideIcon, items: MenuItems}) {
   const Icon = icon ?? MoreHorizontal
 
-  const menuElements = itemGroups.flatMap((items, index) => [
-    ...forEachAs(items, menuItem),
-    takeIf(isNotLast(index, itemGroups),
-      <DropdownMenuSeparator key={index} />
-    ),
-  ])
+  const menuElements = menuContent(itemGroups)
 
   return (
     <DropdownMenu>
