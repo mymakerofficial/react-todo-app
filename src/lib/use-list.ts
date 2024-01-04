@@ -132,6 +132,32 @@ export function useListState<T extends HasId>(initial: Array<T> = [], storage?: 
   }
 }
 
+export function useLimitedListDecorator<T extends HasId>(wrappee: ListState<T>, limit: number): ListState<T> {
+  function init() {
+    wrappee.init()
+    wrappee.set(wrappee.getRawValue().slice(0, limit))
+  }
+
+  function set(value: Array<T>) {
+    wrappee.set(value.slice(0, limit))
+  }
+
+  // remove oldest item if limit is reached
+  function add(item: T) {
+    if (wrappee.getRawValue().length >= limit) {
+      wrappee.remove(wrappee.getRawValue()[0].id)
+    }
+    wrappee.add(item)
+  }
+
+  return {
+    ...wrappee,
+    init,
+    set,
+    add,
+  }
+}
+
 export interface ListSnapshot<T extends HasId> extends HasId {
   value: Array<T>
   message: string
@@ -151,7 +177,7 @@ export interface ListHistoryDecorator<T extends HasId> extends ListState<T> {
 }
 
 export function useListHistoryDecorator<T extends HasId>(wrappee: ListState<T>, storage?: StorageFacade<Array<ListSnapshot<T>>>): ListHistoryDecorator<T> {
-  const history = useListState<ListSnapshot<T>>([], storage)
+  const history = useLimitedListDecorator(useListState<ListSnapshot<T>>([], storage), 10)
   const [historyIndex, setHistoryIndex] = useState<number>(0)
 
   function setIndexToLast() {
