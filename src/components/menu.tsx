@@ -14,15 +14,16 @@ export interface MenuItem {
   icon: LucideIcon
   onClick: () => void
   className?: string
+  disabled?: boolean
 }
 
 export type MenuItems = Array<Array<MenuItem>>
 
 function menuItem(menuItem: MenuItem) {
-  const {label, icon: Icon, onClick, className} = menuItem
+  const {label, icon: Icon, onClick, className, disabled} = menuItem
 
   return (
-    <DropdownMenuItem onClick={onClick} className={cn('space-x-2', className)} key={label} >
+    <DropdownMenuItem onClick={onClick} className={cn('space-x-2', className)} disabled={disabled} key={label} >
       <Icon className='size-[1rem]'/>
       <span>{label}</span>
     </DropdownMenuItem>

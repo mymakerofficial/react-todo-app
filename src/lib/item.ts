@@ -16,3 +16,7 @@ export function newTodoItem(partial: Partial<TodoItem>): TodoItem {
     ...partial,
   }
 }
+
+export function emptyTodoList(): Array<TodoItem> {
+  return []
+}

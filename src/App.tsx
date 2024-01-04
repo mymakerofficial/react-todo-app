@@ -1,4 +1,4 @@
-import {newTodoItem, TodoItem} from "@/lib/item.ts";
+import {emptyTodoList, newTodoItem, TodoItem} from "@/lib/item.ts";
 import {HeaderControls} from "@/components/header-controls.tsx";
 import {ThemeProvider} from "@/components/theme-provider.tsx";
 import {ItemList} from "@/components/item-list.tsx";
@@ -6,11 +6,12 @@ import {ModeToggle} from "@/components/mode-toggle.tsx";
 import {EmptyState} from "@/components/empty-state.tsx";
 import {TooltipProvider} from "@/components/ui/tooltip.tsx";
 import {Toaster} from "@/components/ui/sonner.tsx";
-import {HasId, useListState} from "@/lib/use-list.ts";
+import {HasId, ListSnapshot, useListHistoryDecorator, useListState} from "@/lib/use-list.ts";
 import {groupBy} from "@/lib/group-by.ts";
-import {takeIf, withIdsOf} from "@/lib/take.ts";
+import {takeIf, truncate, withIdsOf} from "@/lib/take.ts";
 import {useStorage} from "@/lib/use-storage.ts";
 import {useMemo} from "react";
+import {toast} from "sonner";
 
 function getRelativeIndex<T extends HasId>(array: Array<T>, itemId: T['id'], offset: number): number {
   const index = array.findIndex((item) => item.id === itemId)
@@ -32,7 +33,7 @@ function Header() {
 }
 
 export default function App() {
-  const list = useListState<TodoItem>([], useStorage('todo-list'))
+  const list = useListHistoryDecorator(useListState(emptyTodoList(), useStorage('todo-list')), useStorage('todo-history'))
 
   useMemo(() => {
     list.init()
@@ -46,16 +47,35 @@ export default function App() {
     (item) => item.completed ? 'completed' : 'active'
   )
 
+  function toastSnapshot(snapshotId: ListSnapshot<TodoItem>['id']) {
+    const snapshot = list.getSnapshotById(snapshotId)
+    if (!snapshot) {
+      return
+    }
+
+    toast(snapshot.message, {
+      action: {
+        label: "Undo",
+        onClick: () => list.restoreSnapshot(snapshot.id, - 1),
+      },
+    })
+  }
+
   function handleAddItem(partialItem: Partial<TodoItem>) {
-    return list.add(newTodoItem(partialItem));
+    list.add(newTodoItem(partialItem));
+    toastSnapshot(list.createSnapshot(`Added "${partialItem.label}"`))
   }
 
   function handleUpdateItem(itemId: TodoItem['id'], changes: Partial<TodoItem>) {
-    return list.update(itemId, changes);
+    const label = list.getById(itemId)?.label
+    list.update(itemId, changes);
+    toastSnapshot(list.createSnapshot(`Updated "${truncate(label)}"`))
   }
 
   function handleMoveItem(itemId: TodoItem['id'], index: number) {
-    return list.move(itemId, index);
+    const label = list.getById(itemId)?.label
+    list.move(itemId, index);
+    toastSnapshot(list.createSnapshot(`Moved "${truncate(label)}"`))
   }
 
   function handleMoveItemRelative(itemId: TodoItem['id'], offset: number) {
@@ -75,19 +95,32 @@ export default function App() {
   }
 
   function handleRemoveItem(itemId: TodoItem['id']) {
+    const label = list.getById(itemId)?.label
     list.remove(itemId)
+    toastSnapshot(list.createSnapshot(`Removed "${truncate(label)}"`))
   }
 
   function handleRemoveItems(itemIds: Array<TodoItem['id']>) {
     list.removeMany(itemIds)
+    toastSnapshot(list.createSnapshot('Removed tasks'))
   }
 
   function handleRemoveAll() {
     list.clear()
+    toastSnapshot(list.createSnapshot('Deleted all tasks'))
   }
 
   function handleCompleteAll() {
     list.updateMany(withIdsOf(list.value), {completed: true})
+    toastSnapshot(list.createSnapshot('Completed all tasks'))
+  }
+
+  function handleUndo() {
+    list.undo()
+  }
+
+  function handleRedo() {
+    list.redo()
   }
 
   const isEmpty = list.value.length === 0
@@ -100,7 +133,11 @@ export default function App() {
           <main className='max-w-2xl mx-auto my-16 flex flex-col gap-8'>
             <Header />
             <HeaderControls
+              canUndo={list.canUndo()}
+              canRedo={list.canRedo()}
               onAddItem={handleAddItem}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
               onDeleteAll={handleRemoveAll}
               onCompleteAll={handleCompleteAll}
             />

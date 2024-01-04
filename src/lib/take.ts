@@ -49,3 +49,7 @@ export function withIdsOf<T extends HasId>(list: Array<T>) {
 export function TODO(): never {
   throw new Error('TODO');
 }
+
+export function truncate(text: string | undefined, length: number = 12): string {
+  return (text || '').length > length ? `${text?.substring(0, length)}...` : (text || '');
+}
