@@ -89,6 +89,7 @@ export function HeaderControls({canUndo, canRedo, history, onAddItem, onUndo, on
           <Button variant='ghost' size='icon' type='submit'><Plus className='size-[1.2rem]' /></Button>
         </form>
       </Form>
+      <Button variant='ghost' size='icon' onClick={handleUndo} disabled={ifNot(canUndo)}><Undo className='size-[1.2rem]' /></Button>
       <Menu items={menuItems} />
     </div>
   )

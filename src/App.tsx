@@ -163,7 +163,6 @@ export default function App() {
               onDeleteAll={handleRemoveAll}
               onCompleteAll={handleCompleteAll}
             />
-            {list.value.length}
             {takeIf(isEmpty,
               <EmptyState label='Nothing to do!' text='Type something in the textfield above' icon='🔎'/>
             )}
