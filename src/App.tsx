@@ -6,7 +6,7 @@ import {ModeToggle} from "@/components/mode-toggle.tsx";
 import {EmptyState} from "@/components/empty-state.tsx";
 import {TooltipProvider} from "@/components/ui/tooltip.tsx";
 import {Toaster} from "@/components/ui/sonner.tsx";
-import {HasId, ListSnapshot, useListHistoryDecorator, useListState} from "@/lib/use-list.ts";
+import {HasId, ListSnapshot, useLimitedListDecorator, useListHistoryDecorator, useListState} from "@/lib/use-list.ts";
 import {groupBy} from "@/lib/group-by.ts";
 import {takeIf, truncate, withIdsOf} from "@/lib/take.ts";
 import {useStorage} from "@/lib/use-storage.ts";
@@ -33,7 +33,17 @@ function Header() {
 }
 
 export default function App() {
-  const list = useListHistoryDecorator(useListState(emptyTodoList(), useStorage('todo-list')), useStorage('todo-history'))
+  const list =
+    useListHistoryDecorator(
+      useLimitedListDecorator(
+        useListState(
+          emptyTodoList(),
+          useStorage('todo-list')
+        ),
+        500
+      ),
+      useStorage('todo-history')
+    )
 
   useMemo(() => {
     list.init()
@@ -62,7 +72,7 @@ export default function App() {
   }
 
   function handleAddItem(partialItem: Partial<TodoItem>) {
-    list.add(newTodoItem(partialItem));
+    list.prepend(newTodoItem(partialItem));
     toastSnapshot(list.createSnapshot(`Added "${partialItem.label}"`))
   }
 

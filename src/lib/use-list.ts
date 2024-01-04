@@ -10,7 +10,8 @@ export interface ListState<T extends HasId> {
   set: (value: Array<T>) => void
   init: () => void
   getById: (id: T['id']) => T | undefined
-  add: (item: T) => void
+  prepend: (item: T) => void
+  append: (item: T) => void
   remove: (id: T['id']) => void
   removeMany: (ids: Array<T['id']>) => void
   clear: () => void
@@ -51,7 +52,11 @@ export function useListState<T extends HasId>(initial: Array<T> = [], storage?: 
     return getRawValue().find((it) => it.id === id)
   }
 
-  function add(item: T) {
+  function prepend(item: T) {
+    set([item, ...getRawValue()])
+  }
+
+  function append(item: T) {
     set([...getRawValue(), item])
   }
 
@@ -121,7 +126,8 @@ export function useListState<T extends HasId>(initial: Array<T> = [], storage?: 
     set,
     init,
     getById,
-    add,
+    prepend,
+    append,
     remove,
     removeMany,
     clear,
@@ -143,18 +149,26 @@ export function useLimitedListDecorator<T extends HasId>(wrappee: ListState<T>, 
   }
 
   // remove oldest item if limit is reached
-  function add(item: T) {
+  function prepend(item: T) {
+    if (wrappee.getRawValue().length >= limit) {
+      wrappee.remove(wrappee.getRawValue()[wrappee.getRawValue().length - 1].id)
+    }
+    wrappee.prepend(item)
+  }
+
+  function append(item: T) {
     if (wrappee.getRawValue().length >= limit) {
       wrappee.remove(wrappee.getRawValue()[0].id)
     }
-    wrappee.add(item)
+    wrappee.append(item)
   }
 
   return {
     ...wrappee,
     init,
     set,
-    add,
+    prepend,
+    append,
   }
 }
 
@@ -211,7 +225,7 @@ export function useListHistoryDecorator<T extends HasId>(wrappee: ListState<T>, 
       createdAt: new Date().toISOString(),
     }
 
-    history.add(snapshot)
+    history.append(snapshot)
     setIndexToLast()
 
     return snapshot.id
